@@ -5,8 +5,9 @@ import os
 from discord import Intents
 from discord.ext import commands
 
-intents = Intents.default()
-intents.members = True
+intents = discord.Intents.all()
+client = discord.Client(command_prefix="!", intents=intents)
+
 
 client = commands.Bot(command_prefix='~', intents=intents)
 my_secret = os.environ['DISCORD_BOT_TOKEN']
