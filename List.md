@@ -1,16 +1,16 @@
 The following is a list of bad words that can trigger a bot responce.<br>
 Use the Issues to add any suggestions.<br>
-Or use Pull Requests to make changes directly.<p>
+Or use Pull Requests to make changes directly.<br>
 
-----Start List----
-Sexyhot
-Bitch
-Fucker
-Fuck
-Shit
-Motherfucker
-----End List----
-----Possible----
+----Start List----<br>
+Sexyhot<br>
+Bitch<br>
+Fucker<br>
+Fuck<br>
+Shit<br>
+Motherfucker<br>
+----End List----<br>
+----Possible----<br>
 Prick
 Shit
 shit ass
