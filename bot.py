@@ -1,36 +1,33 @@
-import os
 import discord
 import re
+import os
 
-intents = discord.Intents.default()
+from discord import Intents
+
+intents = Intents.default()
 intents.members = True
 
 client = discord.Client(intents=intents)
-
-
-@client.event
-async def on_ready():
-    print('Logged in as {0.user}'.format(client))
+my_secret = os.environ['DISCORD_BOT_TOKEN']
 
 
 @client.event
 async def on_message(message):
-    if message.author == client.user:
-        return
+  if message.author.bot or isinstance(message.channel, discord.DMChannel):
+    return
 
-    bad_words = ['profanity', 'badword', 'curse']
+  profanity_words = ['badword1', 'badword2', 'badword3']
 
-    for word in bad_words:
-        pattern = re.compile(r"\b" + word + r"\b", re.IGNORECASE)
-        if pattern.search(message.content):
-            new_content = pattern.sub(word[0] + '*' * (len(word) - 2) + word[-1], message.content)
-            await message.channel.send(f"{message.author.mention} said: {new_content}")
-            await message.delete()
-            return
+  pattern = re.compile(r'\b(?:%s)\b' % '|'.join(profanity_words),
+                       re.IGNORECASE)
+  if pattern.search(message.content):
+    filtered_message = pattern.sub(
+      lambda match: match.group(1) + '*' *
+      (len(match.group(0)) - 2) + match.group(-1), message.content)
+    filtered_message = filtered_message.replace(f"<@{message.author.id}>",
+                                                f"{message.author}:")
+    await message.delete()
+    await message.channel.send(filtered_message)
 
-    if not message.content.strip():
-        await message.delete()
-        await message.channel.send("Your message was deleted because it contained no text.")
-        return
 
-client.run(os.environ['TOKEN'])
+client.run(my_secret)
