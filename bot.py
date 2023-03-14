@@ -20,23 +20,17 @@ async def on_message(message):
 
     bad_words = ['profanity', 'badword', 'curse']
 
+    for word in bad_words:
+        pattern = re.compile(r"\b" + word + r"\b", re.IGNORECASE)
+        if pattern.search(message.content):
+            new_content = pattern.sub(word[0] + '*' * (len(word) - 2) + word[-1], message.content)
+            await message.channel.send(f"{message.author.mention} said: {new_content}")
+            await message.delete()
+            return
+
     if not message.content.strip():
-        return
-
-    has_bad_word = False
-    for word in message.content.split():
-        if word.lower() in bad_words:
-            pattern = re.compile(r"\b" + word + r"\b", re.IGNORECASE)
-            message.content = pattern.sub(word[0] + '*' * (len(word) - 2) + word[-1],
-                                          message.content)
-            has_bad_word = True
-
-    if has_bad_word:
-        await message.channel.send(f"{message.author.mention} said: {message.content}")
         await message.delete()
-    else:
+        await message.channel.send("Your message was deleted because it contained no text.")
         return
 
-
-my_secret = os.environ['TOKEN']
-client.run(my_secret)
+client.run(os.environ['TOKEN'])
