@@ -13,11 +13,6 @@ async def on_ready():
   print('Logged in as {0.user}'.format(bot))
 
 
-@bot.command()
-async def online(ctx):
-  await ctx.send(f"The bot is online and ready to filter profanity!")
-
-
 @bot.event
 async def on_message(message):
   if message.author.bot or isinstance(message.channel, discord.DMChannel):
@@ -26,13 +21,16 @@ async def on_message(message):
   profanity_words = ['badword1', 'badword2', 'badword3']
 
   for word in profanity_words:
-    if word in message.content.lower():
+    # Use regular expressions to match the profanity word regardless of its position in the message
+    regex_pattern = r"\b\w*" + re.escape(word) + r"\w*\b"
+    regex_match = re.search(regex_pattern, message.content, re.IGNORECASE)
+
+    if regex_match:
       filtered_word = word[0] + '*' * (len(word) - 2) + word[-1]
-      filtered_message = re.sub(r'\b{}\b'.format(word),
+      filtered_message = re.sub(regex_pattern,
                                 filtered_word,
                                 message.content,
                                 flags=re.IGNORECASE)
-
       filtered_message = filtered_message.replace(f"<@{message.author.id}>",
                                                   '{user said}')
       await message.delete()
