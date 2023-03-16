@@ -12,11 +12,11 @@ async def ping(ctx):
 
 
 @bot.command()
-async def profanities(ctx):
+async def profanity(ctx):
     with open('profanity.txt', 'r') as file:
         profanity_words = [word.strip() for word in file]
     if profanity_words:
-        await ctx.send("Current profanity list: " + ", ".join(profanity_words))
+        await ctx.send("Current profanity list:\n" + "\n".join(profanity_words))
     else:
         await ctx.send("The profanity list is currently empty.")
 
@@ -25,7 +25,7 @@ async def profanities(ctx):
 async def add(ctx, word):
     with open('profanity.txt', 'a') as file:
         file.write(word + "\n")
-    await ctx.send(f"Added \"{word}\" to the profanity list.")
+    await ctx.send(f"Added the following word to the profanity list: \"{word}\"")
 
 
 @bot.command()
@@ -36,10 +36,9 @@ async def remove(ctx, word):
         profanity_words.remove(word)
         with open('profanity.txt', 'w') as file:
             file.write("\n".join(profanity_words))
-        await ctx.send(f"Removed \"{word}\" from the profanity list.")
+        await ctx.send(f"Removed the following word from the profanity list: \"{word}\"")
     else:
         await ctx.send(f"\"{word}\" was not found in the profanity list.")
-
 
 @bot.event
 async def on_ready():
