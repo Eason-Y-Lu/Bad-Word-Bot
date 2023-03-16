@@ -5,6 +5,10 @@ from discord.ext import commands
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="~", intents=intents)
 
+# Define the check function for admin role
+def is_admin(ctx):
+    return discord.utils.get(ctx.author.roles, name='admin') is not None
+
 
 @bot.command()
 async def ping(ctx):
@@ -29,6 +33,7 @@ async def profanity(ctx):
 
 
 @bot.command()
+@commands.check(is_admin)  # Add the admin check function to the command
 async def add(ctx, word):
     with open('profanity.txt', 'a') as file:
         file.write(word + "\n")
@@ -36,6 +41,7 @@ async def add(ctx, word):
 
 
 @bot.command()
+@commands.check(is_admin)  # Add the admin check function to the command
 async def remove(ctx, word):
     with open('profanity.txt', 'r') as file:
         profanity_words = [w.strip() for w in file]
