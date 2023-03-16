@@ -7,8 +7,8 @@ bot = commands.Bot(command_prefix="~", intents=intents)
 
 
 @bot.command()
-async def online(ctx):
-    await ctx.send(f"The bot is currently {str(bot.latency*1000)}ms latency and online.")
+async def ping(ctx):
+    await ctx.send(f"Pong! The bot is currently {str(bot.latency*1000)}ms latency and online.")
 
 
 @bot.event
