@@ -33,7 +33,7 @@ async def profanity(ctx):
 
 
 @bot.command()
-@commands.check(is_admin)  # Add the admin check function to the command
+@commands.has_role('Office of Strategic Services')
 async def add(ctx, word):
     with open('profanity.txt', 'a') as file:
         file.write(word + "\n")
@@ -41,7 +41,7 @@ async def add(ctx, word):
 
 
 @bot.command()
-@commands.check(is_admin)  # Add the admin check function to the command
+@commands.has_role('Office of Strategic Services')
 async def remove(ctx, word):
     with open('profanity.txt', 'r') as file:
         profanity_words = [w.strip() for w in file]
