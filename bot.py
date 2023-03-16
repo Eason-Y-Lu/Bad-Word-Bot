@@ -1,6 +1,5 @@
 import discord
 import re
-import wikipedia  # Added this line to import wikipedia
 from discord.ext import commands
 
 intents = discord.Intents.all()
@@ -10,6 +9,36 @@ bot = commands.Bot(command_prefix="~", intents=intents)
 @bot.command()
 async def ping(ctx):
     await ctx.send(f"The bot is currently {str(bot.latency*1000)}ms latency and online.")
+
+
+@bot.command()
+async def profanities(ctx):
+    with open('profanity.txt', 'r') as file:
+        profanity_words = [word.strip() for word in file]
+    if profanity_words:
+        await ctx.send("Current profanity list: " + ", ".join(profanity_words))
+    else:
+        await ctx.send("The profanity list is currently empty.")
+
+
+@bot.command()
+async def add(ctx, word):
+    with open('profanity.txt', 'a') as file:
+        file.write(word + "\n")
+    await ctx.send(f"Added \"{word}\" to the profanity list.")
+
+
+@bot.command()
+async def remove(ctx, word):
+    with open('profanity.txt', 'r') as file:
+        profanity_words = [w.strip() for w in file]
+    if word in profanity_words:
+        profanity_words.remove(word)
+        with open('profanity.txt', 'w') as file:
+            file.write("\n".join(profanity_words))
+        await ctx.send(f"Removed \"{word}\" from the profanity list.")
+    else:
+        await ctx.send(f"\"{word}\" was not found in the profanity list.")
 
 
 @bot.event
@@ -44,17 +73,6 @@ async def on_message(message):
 
     # Process commands after checking for profanity words
     await bot.process_commands(message)
-
-
-@bot.command()
-async def wiki(ctx, *, query):
-    try:
-        summary = wikipedia.summary(query, sentences=3)
-        await ctx.send(summary)
-    except wikipedia.exceptions.DisambiguationError as e:
-        await ctx.send(f"Multiple results were found. Please be more specific.")
-    except wikipedia.exceptions.PageError as e:
-        await ctx.send(f"No results were found for \"{query}\".")
 
 
 bot.run('#redacted')
