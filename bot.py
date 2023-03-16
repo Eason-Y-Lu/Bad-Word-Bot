@@ -25,7 +25,7 @@ async def profanity(ctx):
 async def add(ctx, word):
     with open('profanity.txt', 'a') as file:
         file.write(word + "\n")
-    await ctx.send(f"Added the following word to the profanity list: \"{word}\"")
+    await ctx.send(f"Added \"{word}\" to the profanity list.")
 
 
 @bot.command()
