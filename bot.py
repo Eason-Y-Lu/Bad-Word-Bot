@@ -1,9 +1,7 @@
-import os
 import discord
 import re
 from discord.ext import commands
 
-my_secret = os.environ['DISCORD_BOT_TOKEN']
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="~", intents=intents)
 
@@ -47,4 +45,4 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-bot.run(my_secret)
+bot.run('#redacted')
