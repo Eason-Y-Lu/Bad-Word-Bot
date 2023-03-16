@@ -16,7 +16,14 @@ async def profanity(ctx):
     with open('profanity.txt', 'r') as file:
         profanity_words = [word.strip() for word in file]
     if profanity_words:
-        await ctx.send("Current profanity list:\n" + "\n".join(profanity_words))
+        if sum(len(word) for word in profanity_words) <= 1900:
+            await ctx.send("Current profanity list:\n" + "\n".join(profanity_words))
+        else:
+            with open('profanity_list.txt', 'w') as f:
+                f.write("\n".join(profanity_words))
+            with open('profanity_list.txt', 'rb') as f:
+                await ctx.send("Current profanity list is too long to display. Here's a text file with the full list:",
+                               file=discord.File(f, 'profanity_list.txt'))
     else:
         await ctx.send("The profanity list is currently empty.")
 
@@ -40,6 +47,7 @@ async def remove(ctx, word):
     else:
         await ctx.send(f"\"{word}\" was not found in the profanity list.")
 
+
 @bot.event
 async def on_ready():
     print('Logged in as {0.user}'.format(bot))
@@ -47,7 +55,13 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
+    # Ignore messages sent by bots or in DM channels
     if message.author.bot or isinstance(message.channel, discord.DMChannel):
+        return
+
+    # Ignore messages that are bot commands
+    if message.content.startswith(bot.command_prefix):
+        await bot.process_commands(message)
         return
 
     with open('profanity.txt', 'r') as file:
