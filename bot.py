@@ -18,8 +18,15 @@ async def ping(ctx):
 @bot.command()
 async def profanity(ctx):
     guild_id = ctx.guild.id
-    with open(f'profanity_{guild_id}.txt', 'r') as file:
+    profanity_file = f'profanity_{guild_id}.txt'
+
+    if not os.path.isfile(profanity_file):
+        await ctx.send("There are currently no profanity words in the list. Use the `add` command to add a word.")
+        return
+
+    with open(profanity_file, 'r') as file:
         profanity_words = [word.strip() for word in file]
+        
     if profanity_words:
         if sum(len(word) for word in profanity_words) <= 1900:
             await ctx.send("Current profanity list:\n" + "\n".join(profanity_words))
@@ -30,7 +37,7 @@ async def profanity(ctx):
                 await ctx.send("Current profanity list is too long to display. Here's a text file with the full list:",
                                file=discord.File(f, f'profanity_list_{guild_id}.txt'))
     else:
-        await ctx.send("The profanity list is currently empty.")
+        await ctx.send("The profanity list is currently empty. Use the `add` command to add a word.")
 
 
 @bot.command()
