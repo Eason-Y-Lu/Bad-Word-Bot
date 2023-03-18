@@ -5,6 +5,10 @@ from discord.ext import commands
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="~", intents=intents)
 
+# Define the check function for admin role
+def is_admin(ctx):
+    return discord.utils.get(ctx.author.roles, name='admin') is not None
+
 
 @bot.command()
 async def ping(ctx):
@@ -52,8 +56,10 @@ async def remove(ctx, word):
 @bot.command()
 async def role(ctx):
     user_roles = [role.name for role in ctx.author.roles]
+    user_roles = [role[1:] if role.startswith("@") else role for role in user_roles]
     await ctx.send(f"You have the following roles: {', '.join(user_roles)}")
 
+        
 @bot.event
 async def on_ready():
     print('Logged in as {0.user}'.format(bot))
@@ -92,6 +98,5 @@ async def on_message(message):
 
     # Process commands after checking for profanity words
     await bot.process_commands(message)
-
 
 bot.run('#redacted')
