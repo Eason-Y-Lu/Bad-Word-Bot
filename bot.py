@@ -1,6 +1,7 @@
 import discord
 import os
 import re
+from discord.ext import commands
 from spellchecker import SpellChecker
 from fuzzywuzzy import fuzz
 
@@ -129,6 +130,5 @@ async def on_message(message):
 
     # Process commands after checking for profanity words
     await bot.process_commands(message)
-
-
+    
 bot.run('#redacted')
