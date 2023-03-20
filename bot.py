@@ -5,10 +5,6 @@ from discord.ext import commands
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="~", intents=intents)
 
-# Define the check function for admin role
-def is_admin(ctx):
-    return discord.utils.get(ctx.author.roles, name='admin') is not None
-
 
 @bot.command()
 async def ping(ctx):
