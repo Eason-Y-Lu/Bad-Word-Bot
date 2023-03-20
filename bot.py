@@ -1,6 +1,8 @@
 import discord
+import os
 import re
-from discord.ext import commands
+from spellchecker import SpellChecker
+from fuzzywuzzy import fuzz
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="~", intents=intents)
@@ -71,7 +73,6 @@ async def role(ctx):
 async def on_ready():
     print('Logged in as {0.user}'.format(bot))
 
-
 @bot.event
 async def on_message(message):
     # Ignore messages sent by bots or in DM channels
@@ -93,26 +94,41 @@ async def on_message(message):
     else:
         profanity_words = []
 
-    for word in profanity_words:
-        # Use regular expressions to match the profanity word regardless of its position in the message
-        regex_pattern = r"\b\w*" + re.escape(word) + r"\w*\b"
-        regex_match = re.search(regex_pattern, message.content, re.IGNORECASE)
+    # Check for misspellings and fuzzy matches of profanity words
+    spell = SpellChecker()
+    misspelled_words = spell.unknown(profanity_words)
+    fuzzy_matches = []
 
-        if regex_match:
-            filtered_word = word[0] + '*' * (len(word) - 2) + word[-1]
-            filtered_message = re.sub(regex_pattern,
-                                      filtered_word,
-                                      message.content,
-                                      flags=re.IGNORECASE)
-            filtered_message = filtered_message.replace(f"<@{message.author.id}>",
-                                                        '{user said}')
-            await message.delete()
-            await message.channel.send(f"{message.author}: {filtered_message}")
-            break
+    for word in message.content.split():
+        for profanity_word in profanity_words:
+            # Check for exact matches
+            if word.lower() == profanity_word.lower():
+                filtered_word = profanity_word[0] + '*' * (len(profanity_word) - 2) + profanity_word[-1]
+                message.content = message.content.replace(profanity_word, filtered_word)
+                break
+            # Check for misspellings
+            if word.lower() in misspelled_words and spell.correction(word).lower() == profanity_word.lower():
+                filtered_word = profanity_word[0] + '*' * (len(profanity_word) - 2) + profanity_word[-1]
+                message.content = message.content.replace(word, filtered_word)
+                break
+            # Check for fuzzy matches
+            if fuzz.ratio(word.lower(), profanity_word.lower()) > 80:
+                fuzzy_matches.append(profanity_word)
+
+    # Replace fuzzy matches with filtered words
+    for fuzzy_match in fuzzy_matches:
+        filtered_word = fuzzy_match[0] + '*' * (len(fuzzy_match) - 2) + fuzzy_match[-1]
+        message.content = re.sub(fuzzy_match, filtered_word, message.content, flags=re.IGNORECASE)
+
+    # Replace author's username with "{user said}"
+    message.content = message.content.replace(f"<@{message.author.id}>", '{user said}')
+
+    # Send the filtered message
+    await message.delete()
+    await message.channel.send(f"{message.author}: {message.content}")
 
     # Process commands after checking for profanity words
     await bot.process_commands(message)
-
 
 
 bot.run('#redacted')
