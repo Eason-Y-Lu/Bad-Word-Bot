@@ -40,7 +40,7 @@ async def profanity(ctx):
 
 
 @bot.command()
-@commands.has_role('Office of Strategic Services')
+@commands.has_role('Chat Mod')
 async def add(ctx, word):
     guild_id = ctx.guild.id
     with open(f'profanity_{guild_id}.txt', 'a') as file:
@@ -49,7 +49,7 @@ async def add(ctx, word):
 
 
 @bot.command()
-@commands.has_role('Office of Strategic Services')
+@commands.has_role('Chat Mod')
 async def remove(ctx, word):
     guild_id = ctx.guild.id
     with open(f'profanity_{guild_id}.txt', 'r') as file:
@@ -69,6 +69,20 @@ async def role(ctx):
     user_roles = [role[1:] if role.startswith("@") else role for role in user_roles]
     await ctx.send(f"You have the following roles: {', '.join(user_roles)}")
 
+@bot.command()
+@commands.has_role('Chat Mod')
+async def debug(ctx):
+    guild_id = ctx.guild.id
+    profanity_file = f'profanity_{ctx.guild.id}.txt'
+
+    if os.path.isfile(profanity_file):
+        with open(profanity_file, 'r') as file:
+            profanity_words = [word.strip() for line in file for word in line.split('\n') if word.strip()]
+    else:
+        profanity_words = []
+
+    await ctx.send(f"Profanity words: {profanity_words}")
+
 
 @bot.event
 async def on_ready():
@@ -76,59 +90,28 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    # Ignore messages sent by bots or in DM channels
     if message.author.bot or isinstance(message.channel, discord.DMChannel):
         return
-
-    # Ignore messages that are bot commands
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
         return
-
-    # Get the name of the profanity list file based on the server name
-    profanity_file = f"{message.guild.name}_profanity.txt"
-
-    # Check if the profanity list file exists
+    guild_id = message.guild.id
+    profanity_file = f'profanity_{guild_id}.txt'
     if os.path.isfile(profanity_file):
         with open(profanity_file, 'r') as file:
-            profanity_words = [word.strip() for word in file]
+             profanity_words = [word.strip() for line in file for word in line.split('\n') if word.strip()]
     else:
         profanity_words = []
-
-    # Check for misspellings and fuzzy matches of profanity words
-    spell = SpellChecker()
-    misspelled_words = spell.unknown(profanity_words)
-    fuzzy_matches = []
-
-    for word in message.content.split():
-        for profanity_word in profanity_words:
-            # Check for exact matches
-            if word.lower() == profanity_word.lower():
-                filtered_word = profanity_word[0] + '*' * (len(profanity_word) - 2) + profanity_word[-1]
-                message.content = message.content.replace(profanity_word, filtered_word)
-                break
-            # Check for misspellings
-            if word.lower() in misspelled_words and spell.correction(word).lower() == profanity_word.lower():
-                filtered_word = profanity_word[0] + '*' * (len(profanity_word) - 2) + profanity_word[-1]
-                message.content = message.content.replace(word, filtered_word)
-                break
-            # Check for fuzzy matches
-            if fuzz.ratio(word.lower(), profanity_word.lower()) > 80:
-                fuzzy_matches.append(profanity_word)
-
-    # Replace fuzzy matches with filtered words
-    for fuzzy_match in fuzzy_matches:
-        filtered_word = fuzzy_match[0] + '*' * (len(fuzzy_match) - 2) + fuzzy_match[-1]
-        message.content = re.sub(fuzzy_match, filtered_word, message.content, flags=re.IGNORECASE)
-
-    # Replace author's username with "{user said}"
-    message.content = message.content.replace(f"<@{message.author.id}>", '{user said}')
-
-    # Send the filtered message
-    await message.delete()
-    await message.channel.send(f"{message.author}: {message.content}")
-
-    # Process commands after checking for profanity words
+    for word in profanity_words:
+        regex_pattern = r"\b\w*" + re.escape(word) + r"\w*\b"
+        regex_match = re.search(regex_pattern, message.content, re.IGNORECASE)
+        if regex_match:
+            filtered_word = word[0] + '*' * (len(word) - 2) + word[-1]
+            filtered_message = re.sub(regex_pattern, filtered_word, message.content, flags=re.IGNORECASE)
+            filtered_message = filtered_message.replace(f"<@{message.author.id}>", '{user said}')
+            await message.delete()
+            await message.channel.send(f"{message.author}: {filtered_message}")
+            break
     await bot.process_commands(message)
-    
-bot.run('#redacted')
+
+bot.run('redacted')
