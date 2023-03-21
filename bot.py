@@ -7,7 +7,7 @@ from fuzzywuzzy import fuzz
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="~", intents=intents)
-
+spell = SpellChecker()
 
 @bot.command()
 async def ping(ctx):
@@ -95,16 +95,33 @@ async def on_message(message):
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
         return
+
     guild_id = message.guild.id
     profanity_file = f'profanity_{guild_id}.txt'
+
     if os.path.isfile(profanity_file):
         with open(profanity_file, 'r') as file:
-             profanity_words = [word.strip() for line in file for word in line.split('\n') if word.strip()]
+            profanity_words = [word.strip() for line in file for word in line.split('\n') if word.strip()]
     else:
         profanity_words = []
+
     for word in profanity_words:
+        # Check for exact match
         regex_pattern = r"\b\w*" + re.escape(word) + r"\w*\b"
         regex_match = re.search(regex_pattern, message.content, re.IGNORECASE)
+
+        # Check for fuzzy match
+        if not regex_match:
+            fuzzy_match = process.extractOne(word, message.content.split(), scorer=fuzz.token_sort_ratio)
+            if fuzzy_match and fuzzy_match[1] >= 80:
+                regex_match = True
+
+        # Check for misspelled match
+        if not regex_match:
+            misspelled_match = spell.correction(word)
+            if misspelled_match != word and misspelled_match in message.content:
+                regex_match = True
+
         if regex_match:
             filtered_word = word[0] + '*' * (len(word) - 2) + word[-1]
             filtered_message = re.sub(regex_pattern, filtered_word, message.content, flags=re.IGNORECASE)
@@ -112,6 +129,5 @@ async def on_message(message):
             await message.delete()
             await message.channel.send(f"{message.author}: {filtered_message}")
             break
-    await bot.process_commands(message)
 
-bot.run('redacted')
+bot.run('#removed')
