@@ -39,32 +39,55 @@ async def profanity(ctx):
         await ctx.send("The profanity list is currently empty. Use the `add` command to add a word.")
 
 
-@bot.command()
-@commands.has_role('Chat Mod')
-async def add(ctx, word):
-    guild_id = ctx.guild.id
-    with open(f'profanity_{guild_id}.txt', 'a') as file:
-        file.write(word + "\n")
-    await ctx.send(f"Added \"{word}\" to the profanity list.")
+@client.command()
+async def add(ctx, *args):
+    if len(args) < 2:
+        await ctx.send("Error: not enough arguments. Usage: `~add [word1] [word2] ... [wordN]`")
+        return
 
+    words = []
+    for arg in args:
+        if arg.startswith("[") and arg.endswith("]"):
+            words.append(arg[1:-1])
+        else:
+            await ctx.send(f"Error: invalid argument `{arg}`. Arguments must be enclosed in square brackets, e.g. `[word]`")
+            return
 
-@bot.command()
-@commands.has_role('Chat Mod')
-async def remove(ctx, word):
-    guild_id = ctx.guild.id
-    with open(f'profanity_{guild_id}.txt', 'r') as file:
-        profanity_words = [w.strip() for w in file]
-    if word == 'all':
-        with open(f'profanity_{guild_id}.txt', 'w') as file:
-            file.write('')
-        await ctx.send("Cleared the entire profanity list.")
-    elif word in profanity_words:
-        profanity_words.remove(word)
-        with open(f'profanity_{guild_id}.txt', 'w') as file:
-            file.write("\n".join(profanity_words))
-        await ctx.send(f"Removed the following word from the profanity list: \"{word}\"")
+    with open('words.txt', 'a') as file:
+        for word in words:
+            file.write(word.lower() + "\n")
+    
+    await ctx.send(f"{', '.join(words)} added successfully!")
+@client.command()
+async def remove(ctx, *args):
+    if len(args) < 2:
+        await ctx.send("Error: not enough arguments. Usage: `~remove [word1] [word2] ... [wordN]`")
+        return
+
+    words = []
+    for arg in args:
+        if arg.startswith("[") and arg.endswith("]"):
+            words.append(arg[1:-1])
+        else:
+            await ctx.send(f"Error: invalid argument `{arg}`. Arguments must be enclosed in square brackets, e.g. `[word]`")
+            return
+
+    with open('words.txt', 'r') as file:
+        lines = file.readlines()
+
+    with open('words.txt', 'w') as file:
+        removed = []
+        for line in lines:
+            word = line.strip()
+            if word.lower() not in words:
+                file.write(line)
+            else:
+                removed.append(word)
+
+    if len(removed) > 0:
+        await ctx.send(f"{', '.join(removed)} removed successfully!")
     else:
-        await ctx.send(f"\"{word}\" was not found in the profanity list.")
+        await ctx.send("Error: no words removed. Make sure the words you specified are in the list.")
 
 
 @bot.command()
