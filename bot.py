@@ -54,7 +54,11 @@ async def remove(ctx, word):
     guild_id = ctx.guild.id
     with open(f'profanity_{guild_id}.txt', 'r') as file:
         profanity_words = [w.strip() for w in file]
-    if word in profanity_words:
+    if word == 'all':
+        with open(f'profanity_{guild_id}.txt', 'w') as file:
+            file.write('')
+        await ctx.send("Cleared the entire profanity list.")
+    elif word in profanity_words:
         profanity_words.remove(word)
         with open(f'profanity_{guild_id}.txt', 'w') as file:
             file.write("\n".join(profanity_words))
