@@ -1,11 +1,9 @@
-#bot.py
-#This code is coded by Eason Lu with the Help of ChatGPT.
 import discord
 import os
 import re
 from discord.ext import commands
 from spellchecker import SpellChecker
-from fuzzywuzzy import fuzz
+from fuzzywuzzy import fuzz, process
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="~", intents=intents)
@@ -42,29 +40,34 @@ async def profanity(ctx):
 
 @bot.command()
 async def add(ctx, *args):
-    if len(args) < 1:
-        await ctx.send("Error: not enough arguments. Usage: `~add [word1] [word2] ... [wordN]`")
+    # Check if the user has the Chat Mod role permission
+    if not any(role.name == 'Chat Mod' for role in ctx.author.roles):
+        await ctx.send("Error: You do not have the required role to use this command.")
         return
 
-    server_id = str(ctx.guild.id)
-    filename = f"profanity_{server_id}.txt"
-
-    words = []
-    for arg in args:
-        if arg.startswith("[") and arg.endswith("]"):
-            words.append(arg[1:-1])
-        else:
-            await ctx.send(f"Error: invalid argument `{arg}`. Arguments must be enclosed in square brackets, e.g. `[word]`")
+        if len(args) < 1:
+            await ctx.send("Error: not enough arguments. Usage: `~add [word1] [word2] ... [wordN]`")
             return
 
-    with open(filename, 'a') as file:
-        for word in words:
-            file.write(word.lower() + "\n")
-    
-    await ctx.send(f"{', '.join(words)} added successfully!")
+        server_id = str(ctx.guild.id)
+        filename = f"profanity_{server_id}.txt"
 
+        words = []
+        for arg in args:
+            if arg.startswith("[") and arg.endswith("]"):
+                words.append(arg[1:-1])
+            else:
+                await ctx.send(f"Error: invalid argument `{arg}`. Arguments must be enclosed in square brackets, e.g. `[word]`")
+                return
+
+        with open(filename, 'a') as file:
+            for word in words:
+                file.write(word.lower() + "\n")
+
+        await ctx.send(f"{', '.join(words)} added successfully!")
 
 @bot.command()
+@commands.has_role('Chat Mod')
 async def remove(ctx, *args):
     if len(args) < 1:
         await ctx.send("Error: not enough arguments. Usage: `~remove [word1] [word2] ... [wordN]` or `~remove all`")
@@ -104,15 +107,21 @@ async def remove(ctx, *args):
         else:
             await ctx.send("Error: no words removed. Make sure the words you specified are in the list.")
 
-@bot.command()
-async def role(ctx):
-    user_roles = [role.name for role in ctx.author.roles]
-    user_roles = [role[1:] if role.startswith("@") else role for role in user_roles]
-    await ctx.send(f"You have the following roles: {', '.join(user_roles)}")
+@remove.error
+async def remove_error(ctx, error):
+    if isinstance(error, commands.MissingRole):
+        await ctx.send("Error: You do not have the required role to use this command.")
+    else:
+        await ctx.send(f"An error occurred: {error}")
 
 @bot.command()
-@commands.has_role('Chat Mod')
 async def debug(ctx):
+    # Check if the user has the Chat Mod role permission
+    if not any(role.name == 'Chat Mod' for role in ctx.author.roles):
+        await ctx.send("Error: You do not have the required role to use this command.")
+        return
+
+    # Do the command logic for users who have the Chat Mod role permission
     guild_id = ctx.guild.id
     profanity_file = f'profanity_{ctx.guild.id}.txt'
 
@@ -123,7 +132,6 @@ async def debug(ctx):
         profanity_words = []
 
     await ctx.send(f"Profanity words: {profanity_words}")
-
 
 @bot.event
 async def on_ready():
