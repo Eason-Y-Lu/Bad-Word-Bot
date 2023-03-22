@@ -39,7 +39,7 @@ async def profanity(ctx):
         await ctx.send("The profanity list is currently empty. Use the `add` command to add a word.")
 
 
-@client.command()
+@bot.command()
 async def add(ctx, *args):
     if len(args) < 2:
         await ctx.send("Error: not enough arguments. Usage: `~add [word1] [word2] ... [wordN]`")
@@ -58,7 +58,7 @@ async def add(ctx, *args):
             file.write(word.lower() + "\n")
     
     await ctx.send(f"{', '.join(words)} added successfully!")
-@client.command()
+@bot.command()
 async def remove(ctx, *args):
     if len(args) < 2:
         await ctx.send("Error: not enough arguments. Usage: `~remove [word1] [word2] ... [wordN]`")
