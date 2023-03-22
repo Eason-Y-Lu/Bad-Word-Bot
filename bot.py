@@ -1,3 +1,5 @@
+#bot.py
+#This code is coded by Eason Lu with the Help of ChatGPT.
 import discord
 import os
 import re
@@ -38,12 +40,14 @@ async def profanity(ctx):
     else:
         await ctx.send("The profanity list is currently empty. Use the `add` command to add a word.")
 
-
 @bot.command()
 async def add(ctx, *args):
-    if len(args) < 2:
+    if len(args) < 1:
         await ctx.send("Error: not enough arguments. Usage: `~add [word1] [word2] ... [wordN]`")
         return
+
+    server_id = str(ctx.guild.id)
+    filename = f"profanity_{server_id}.txt"
 
     words = []
     for arg in args:
@@ -53,42 +57,52 @@ async def add(ctx, *args):
             await ctx.send(f"Error: invalid argument `{arg}`. Arguments must be enclosed in square brackets, e.g. `[word]`")
             return
 
-    with open('words.txt', 'a') as file:
+    with open(filename, 'a') as file:
         for word in words:
             file.write(word.lower() + "\n")
     
     await ctx.send(f"{', '.join(words)} added successfully!")
+
+
 @bot.command()
 async def remove(ctx, *args):
-    if len(args) < 2:
-        await ctx.send("Error: not enough arguments. Usage: `~remove [word1] [word2] ... [wordN]`")
+    if len(args) < 1:
+        await ctx.send("Error: not enough arguments. Usage: `~remove [word1] [word2] ... [wordN]` or `~remove all`")
         return
+
+    server_id = str(ctx.guild.id)
+    filename = f"profanity_{server_id}.txt"
 
     words = []
     for arg in args:
-        if arg.startswith("[") and arg.endswith("]"):
+        if arg == "all":
+            words = ["all"]
+            break
+        elif arg.startswith("[") and arg.endswith("]"):
             words.append(arg[1:-1])
         else:
             await ctx.send(f"Error: invalid argument `{arg}`. Arguments must be enclosed in square brackets, e.g. `[word]`")
             return
 
-    with open('words.txt', 'r') as file:
+    with open(filename, 'r') as file:
         lines = file.readlines()
 
-    with open('words.txt', 'w') as file:
+    with open(filename, 'w') as file:
         removed = []
-        for line in lines:
-            word = line.strip()
-            if word.lower() not in words:
-                file.write(line)
-            else:
-                removed.append(word)
+        if "all" in words:
+            removed = [line.strip() for line in lines]
+        else:
+            for line in lines:
+                word = line.strip()
+                if word.lower() not in words:
+                    file.write(line)
+                else:
+                    removed.append(word)
 
-    if len(removed) > 0:
-        await ctx.send(f"{', '.join(removed)} removed successfully!")
-    else:
-        await ctx.send("Error: no words removed. Make sure the words you specified are in the list.")
-
+        if len(removed) > 0:
+            await ctx.send(f"{', '.join(removed)} removed successfully!")
+        else:
+            await ctx.send("Error: no words removed. Make sure the words you specified are in the list.")
 
 @bot.command()
 async def role(ctx):
