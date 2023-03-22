@@ -2,17 +2,14 @@ import discord
 import os
 import re
 from discord.ext import commands
-from spellchecker import SpellChecker
 from fuzzywuzzy import fuzz, process
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="~", intents=intents)
-spell = SpellChecker()
 
 @bot.command()
 async def ping(ctx):
     await ctx.send(f"The bot is currently {str(bot.latency*1000)}ms latency and online.")
-
 
 @bot.command()
 async def profanity(ctx):
@@ -38,100 +35,120 @@ async def profanity(ctx):
     else:
         await ctx.send("The profanity list is currently empty. Use the `add` command to add a word.")
 
-@bot.command()
-async def add(ctx, *args):
-    # Check if the user has the Chat Mod role permission
-    if not any(role.name == 'Chat Mod' for role in ctx.author.roles):
-        await ctx.send("Error: You do not have the required role to use this command.")
-        return
-
-        if len(args) < 1:
-            await ctx.send("Error: not enough arguments. Usage: `~add [word1] [word2] ... [wordN]`")
-            return
-
-        server_id = str(ctx.guild.id)
-        filename = f"profanity_{server_id}.txt"
-
-        words = []
-        for arg in args:
-            if arg.startswith("[") and arg.endswith("]"):
-                words.append(arg[1:-1])
-            else:
-                await ctx.send(f"Error: invalid argument `{arg}`. Arguments must be enclosed in square brackets, e.g. `[word]`")
-                return
-
-        with open(filename, 'a') as file:
-            for word in words:
-                file.write(word.lower() + "\n")
-
-        await ctx.send(f"{', '.join(words)} added successfully!")
 
 @bot.command()
 @commands.has_role('Chat Mod')
-async def remove(ctx, *args):
-    if len(args) < 1:
-        await ctx.send("Error: not enough arguments. Usage: `~remove [word1] [word2] ... [wordN]` or `~remove all`")
+async def add(ctx, *, words):
+    guild_id = ctx.guild.id
+    pattern = r'\[([^\[\]]+)\]'  # regular expression to match words in square brackets
+    matches = re.findall(pattern, words)
+    if not matches:
+        await ctx.send("Please provide at least one word enclosed in square brackets.")
         return
+    added_words = []
+    try:
+        with open(f'profanity_{guild_id}.txt', 'a') as file:
+            for match in matches:
+                file.write(match + "\n")
+                added_words.append(match)
+    except Exception as e:
+        await ctx.send(f"An error occurred while updating the profanity list: {e}")
+        return
+    if len(added_words) > 0:
+        added_word_str = "\n".join(f"- {w}" for w in added_words)
+        await ctx.send(f"Added {len(added_words)} words to the profanity list:\n{added_word_str}")
+    else:
+        await ctx.send("No words were added to the profanity list.")
 
-    server_id = str(ctx.guild.id)
-    filename = f"profanity_{server_id}.txt"
+@add.error
+async def add_error(ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        await ctx.send("You do not have permission to use this command.")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Please provide at least one word enclosed in square brackets.")
+    else:
+        await ctx.send(f"An error occurred while executing the command: {error}")
+        
+import re
 
-    words = []
-    for arg in args:
-        if arg == "all":
-            words = ["all"]
-            break
-        elif arg.startswith("[") and arg.endswith("]"):
-            words.append(arg[1:-1])
+@bot.command()
+@commands.has_role('Chat Mod')
+async def remove(ctx, *, words):
+    guild_id = ctx.guild.id
+    pattern = r'\[([^\[\]]+)\]'  # regular expression to match words in square brackets
+    matches = re.findall(pattern, words)
+    if not matches and words != "all":
+        await ctx.send("Please provide at least one word enclosed in square brackets, or enter 'all' to remove all words from the profanity list.")
+        return
+    removed_words = []
+    try:
+        with open(f'profanity_{guild_id}.txt', 'r') as file:
+            profanity_words = [w.strip() for w in file]
+        if words == "all":
+            removed_words = profanity_words
+            profanity_words = []
         else:
-            await ctx.send(f"Error: invalid argument `{arg}`. Arguments must be enclosed in square brackets, e.g. `[word]`")
-            return
-
-    with open(filename, 'r') as file:
-        lines = file.readlines()
-
-    with open(filename, 'w') as file:
-        removed = []
-        if "all" in words:
-            removed = [line.strip() for line in lines]
-        else:
-            for line in lines:
-                word = line.strip()
-                if word.lower() not in words:
-                    file.write(line)
-                else:
-                    removed.append(word)
-
-        if len(removed) > 0:
-            await ctx.send(f"{', '.join(removed)} removed successfully!")
-        else:
-            await ctx.send("Error: no words removed. Make sure the words you specified are in the list.")
+            for match in matches:
+                if match in profanity_words:
+                    profanity_words.remove(match)
+                    removed_words.append(match)
+        with open(f'profanity_{guild_id}.txt', 'w') as file:
+            file.write("\n".join(profanity_words))
+    except Exception as e:
+        await ctx.send(f"An error occurred while updating the profanity list: {e}")
+        return
+    if len(removed_words) > 0:
+        removed_word_str = "\n".join(f"- {w}" for w in removed_words)
+        await ctx.send(f"Removed {len(removed_words)} words from the profanity list:\n{removed_word_str}")
+    elif words == "all":
+        await ctx.send("Removed all words from the profanity list.")
+    else:
+        await ctx.send("No words were removed from the profanity list.")
 
 @remove.error
 async def remove_error(ctx, error):
-    if isinstance(error, commands.MissingRole):
-        await ctx.send("Error: You do not have the required role to use this command.")
+    if isinstance(error, commands.CheckFailure):
+        await ctx.send("You do not have permission to use this command.")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Please provide at least one word enclosed in square brackets, or enter 'all' to remove all words from the profanity list.")
     else:
-        await ctx.send(f"An error occurred: {error}")
+        await ctx.send(f"An error occurred while executing the command: {error}")
 
 @bot.command()
-async def debug(ctx):
-    # Check if the user has the Chat Mod role permission
-    if not any(role.name == 'Chat Mod' for role in ctx.author.roles):
-        await ctx.send("Error: You do not have the required role to use this command.")
-        return
+async def role(ctx):
+    user_roles = [role.name for role in ctx.author.roles]
+    user_roles = [role[1:] if role.startswith("@") else role for role in user_roles]
+    await ctx.send(f"You have the following roles: {', '.join(user_roles)}")
 
-    # Do the command logic for users who have the Chat Mod role permission
+@bot.command()
+@commands.has_role('Chat Mod')
+async def debug(ctx):
     guild_id = ctx.guild.id
     profanity_file = f'profanity_{ctx.guild.id}.txt'
 
-    if os.path.isfile(profanity_file):
+    try:
         with open(profanity_file, 'r') as file:
             profanity_words = [word.strip() for line in file for word in line.split('\n') if word.strip()]
-    else:
-        profanity_words = []
+    except FileNotFoundError:
+        await ctx.send(f"Could not find profanity list file \"{profanity_file}\"")
+        return
+    except Exception as e:
+        await ctx.send(f"An error occurred while reading profanity list file: {e}")
+        return
 
-    await ctx.send(f"Profanity words: {profanity_words}")
+    output = f"Profanity words ({len(profanity_words)}):\n"
+    for i, word in enumerate(profanity_words):
+        output += f"{i+1}. {word}\n"
+        if i % 20 == 19:  # send every 20 lines to avoid message size limits
+            await ctx.send(output)
+            output = ""
+    if output:
+        await ctx.send(output)
+
+@debug.error
+async def debug_error(ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        await ctx.send("You do not have permission to use this command.")
 
 @bot.event
 async def on_ready():
@@ -144,39 +161,24 @@ async def on_message(message):
     if message.content.startswith(bot.command_prefix):
         await bot.process_commands(message)
         return
-
     guild_id = message.guild.id
     profanity_file = f'profanity_{guild_id}.txt'
-
     if os.path.isfile(profanity_file):
         with open(profanity_file, 'r') as file:
             profanity_words = [word.strip() for line in file for word in line.split('\n') if word.strip()]
     else:
         profanity_words = []
-
     for word in profanity_words:
-        # Check for exact match
-        regex_pattern = r"\b\w*" + re.escape(word) + r"\w*\b"
-        regex_match = re.search(regex_pattern, message.content, re.IGNORECASE)
-
-        # Check for fuzzy match
-        if not regex_match:
-            fuzzy_match = process.extractOne(word, message.content.split(), scorer=fuzz.token_sort_ratio)
-            if fuzzy_match and fuzzy_match[1] >= 80:
-                regex_match = True
-
-        # Check for misspelled match
-        if not regex_match:
-            misspelled_match = spell.correction(word)
-            if misspelled_match != word and misspelled_match in message.content:
-                regex_match = True
-
-        if regex_match:
-            filtered_word = word[0] + '*' * (len(word) - 2) + word[-1]
-            filtered_message = re.sub(regex_pattern, filtered_word, message.content, flags=re.IGNORECASE)
-            filtered_message = filtered_message.replace(f"<@{message.author.id}>", '{user said}')
-            await message.delete()
-            await message.channel.send(f"{message.author}: {filtered_message}")
-            break
-
+        ratio = fuzz.token_set_ratio(word, message.content)
+        if ratio >= 90:
+            regex_pattern = r"\b\w*" + re.escape(word) + r"\w*\b"
+            regex_match = re.search(regex_pattern, message.content, re.IGNORECASE)
+            if regex_match:
+                filtered_word = word[0] + '*' * (len(word) - 2) + word[-1]
+                filtered_message = re.sub(regex_pattern, filtered_word, message.content, flags=re.IGNORECASE)
+                filtered_message = filtered_message.replace(f"<@{message.author.id}>", '{user said}')
+                await message.delete()
+                await message.channel.send(f"{message.author}: {filtered_message}")
+                break
+    await bot.process_commands(message)
 bot.run('#removed')
