@@ -68,8 +68,6 @@ async def add_error(ctx, error):
         await ctx.send("Please provide at least one word enclosed in square brackets.")
     else:
         await ctx.send(f"An error occurred while executing the command: {error}")
-        
-import re
 
 @bot.command()
 @commands.has_role('Mod (Praeses)')
