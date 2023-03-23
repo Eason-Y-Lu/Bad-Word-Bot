@@ -43,8 +43,8 @@ async def add(ctx, *, words):
     pattern = r'\[([^\[\]]+)\]'  # regular expression to match words in square brackets
     matches = re.findall(pattern, words)
     if not matches:
-        await ctx.send("Please provide at least one word enclosed in square brackets.")
-        await ctx.message.delete() # Delete the user's command message
+        await ctx.author.send("Please provide at least one word enclosed in square brackets.")
+        await ctx.message.delete()
         return
     added_words = []
     try:
@@ -53,26 +53,26 @@ async def add(ctx, *, words):
                 file.write(match + "\n")
                 added_words.append(match)
     except Exception as e:
-        await ctx.send(f"An error occurred while updating the profanity list: {e}")
+        await ctx.author.send(f"An error occurred while updating the profanity list: {e}")
         return
     if len(added_words) > 0:
         added_word_str = "\n".join(f"- {w}" for w in added_words)
-        await ctx.send(f"Added {len(added_words)} words to the profanity list:\n{added_word_str}")
+        await ctx.author.send(f"Added {len(added_words)} words to the profanity list:\n{added_word_str}")
     else:
-        await ctx.send("No words were added to the profanity list.")
-    await ctx.message.delete() # Delete the user's command message regardless of whether it succeeded or failed
+        await ctx.author.send("No words were added to the profanity list.")
+    await ctx.message.delete()
 
 @add.error
 async def add_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
-        await ctx.send("You do not have permission to use this command.")
-        await ctx.message.delete() # Delete the user's command message
+        await ctx.author.send("You do not have permission to use this command.")
+        await ctx.message.delete()
     elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Please provide at least one word enclosed in square brackets.")
-        await ctx.message.delete() # Delete the user's command message
+        await ctx.author.send("Please provide at least one word enclosed in square brackets.")
+        await ctx.message.delete()
     else:
-        await ctx.send(f"An error occurred while executing the command: {error}")
-        await ctx.message.delete() # Delete the user's command message regardless of what type of error occurred
+        await ctx.author.send(f"An error occurred while executing the command: {error}")
+        await ctx.message.delete()
 
 @bot.command()
 @commands.has_role('Mod (Praeses)')
