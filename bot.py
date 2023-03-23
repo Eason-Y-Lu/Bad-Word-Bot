@@ -27,17 +27,17 @@ async def profanity(ctx):
         if sum(len(word) for word in profanity_words) <= 1900:
             await ctx.send("Current profanity list:\n" + "\n".join(profanity_words))
         else:
-            with open(f'profanity_list_{guild_id}.txt', 'w') as f:
+            with open(f'profanity_{guild_id}.txt', 'w') as f:
                 f.write("\n".join(profanity_words))
-            with open(f'profanity_list_{guild_id}.txt', 'rb') as f:
+            with open(f'profanity_{guild_id}.txt', 'rb') as f:
                 await ctx.send("Current profanity list is too long to display. Here's a text file with the full list:",
-                               file=discord.File(f, f'profanity_list_{guild_id}.txt'))
+                               file=discord.File(f, f'profanity_{guild_id}.txt'))
     else:
         await ctx.send("The profanity list is currently empty. Use the `add` command to add a word.")
 
 
 @bot.command()
-@commands.has_role('Chat Mod')
+@commands.has_role('Mod (Praeses)')
 async def add(ctx, *, words):
     guild_id = ctx.guild.id
     pattern = r'\[([^\[\]]+)\]'  # regular expression to match words in square brackets
@@ -72,7 +72,7 @@ async def add_error(ctx, error):
 import re
 
 @bot.command()
-@commands.has_role('Chat Mod')
+@commands.has_role('Mod (Praeses)')
 async def remove(ctx, *, words):
     guild_id = ctx.guild.id
     pattern = r'\[([^\[\]]+)\]'  # regular expression to match words in square brackets
@@ -121,7 +121,7 @@ async def role(ctx):
     await ctx.send(f"You have the following roles: {', '.join(user_roles)}")
 
 @bot.command()
-@commands.has_role('Chat Mod')
+@commands.has_role('Mod (Praeses)')
 async def debug(ctx):
     guild_id = ctx.guild.id
     profanity_file = f'profanity_{ctx.guild.id}.txt'
