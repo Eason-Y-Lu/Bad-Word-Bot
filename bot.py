@@ -22,7 +22,7 @@ async def profanity(ctx):
 
     with open(profanity_file, 'r') as file:
         profanity_words = [word.strip() for word in file]
-        
+
     if profanity_words:
         if sum(len(word) for word in profanity_words) <= 1900:
             await ctx.send("Current profanity list:\n" + "\n".join(profanity_words))
@@ -35,15 +35,15 @@ async def profanity(ctx):
     else:
         await ctx.send("The profanity list is currently empty. Use the `add` command to add a word.")
 
-
 @bot.command()
 @commands.has_role('Mod (Praeses)')
 async def add(ctx, *, words):
     guild_id = ctx.guild.id
-    pattern = r'\[([^\[\]]+)\]'  # regular expression to match words in square brackets
+    pattern = r'\[([^\[\]]+)\]'  
     matches = re.findall(pattern, words)
     if not matches:
         await ctx.send("Please provide at least one word enclosed in square brackets.")
+        await ctx.message.delete() 
         return
     added_words = []
     try:
@@ -59,23 +59,24 @@ async def add(ctx, *, words):
         await ctx.send(f"Added {len(added_words)} words to the profanity list:\n{added_word_str}")
     else:
         await ctx.send("No words were added to the profanity list.")
+    await ctx.message.delete() 
 
 @add.error
 async def add_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
-        await ctx.send("You do not have permission to use this command.")
+        await ctx.message.delete() 
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Please provide at least one word enclosed in square brackets.")
+        await ctx.message.delete() 
     else:
         await ctx.send(f"An error occurred while executing the command: {error}")
-        
-import re
+        await ctx.message.delete() 
 
 @bot.command()
 @commands.has_role('Mod (Praeses)')
 async def remove(ctx, *, words):
     guild_id = ctx.guild.id
-    pattern = r'\[([^\[\]]+)\]'  # regular expression to match words in square brackets
+    pattern = r'\[([^\[\]]+)\]'  
     matches = re.findall(pattern, words)
     if not matches and words != "all":
         await ctx.send("Please provide at least one word enclosed in square brackets, or enter 'all' to remove all words from the profanity list.")
@@ -108,11 +109,13 @@ async def remove(ctx, *, words):
 @remove.error
 async def remove_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
-        await ctx.send("You do not have permission to use this command.")
+        await ctx.message.delete() 
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Please provide at least one word enclosed in square brackets, or enter 'all' to remove all words from the profanity list.")
+        await ctx.message.delete() 
     else:
         await ctx.send(f"An error occurred while executing the command: {error}")
+        await ctx.message.delete() 
 
 @bot.command()
 async def role(ctx):
@@ -148,7 +151,7 @@ async def debug(ctx):
 @debug.error
 async def debug_error(ctx, error):
     if isinstance(error, commands.CheckFailure):
-        await ctx.send("You do not have permission to use this command.")
+        await ctx.message.delete()
 
 @bot.event
 async def on_ready():
